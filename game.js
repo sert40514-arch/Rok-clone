@@ -1,47 +1,51 @@
-// === CANVAS SETUP ===
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight - 80;
+// 🔴 KRİTİK: Tarayıcı default hareketlerini kapat
+canvas.style.touchAction = "none";
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 80;
+}
+resize();
+window.addEventListener("resize", resize);
 
 // === CAMERA ===
-const camera = {
-  x: 0,
-  y: 0
-};
+const camera = { x: 0, y: 0 };
 
-// === TOUCH PAN SYSTEM ===
+// === PAN STATE ===
 let isDragging = false;
-let lastTouch = { x: 0, y: 0 };
+let lastX = 0;
+let lastY = 0;
 
+// === TOUCH EVENTS ===
 canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
   isDragging = true;
-  lastTouch.x = e.touches[0].clientX;
-  lastTouch.y = e.touches[0].clientY;
-});
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+}, { passive: false });
 
 canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
   if (!isDragging) return;
 
   const x = e.touches[0].clientX;
   const y = e.touches[0].clientY;
 
-  const dx = x - lastTouch.x;
-  const dy = y - lastTouch.y;
+  camera.x += lastX - x;
+  camera.y += lastY - y;
 
-  camera.x -= dx;
-  camera.y -= dy;
-
-  lastTouch.x = x;
-  lastTouch.y = y;
-});
+  lastX = x;
+  lastY = y;
+}, { passive: false });
 
 canvas.addEventListener("touchend", () => {
   isDragging = false;
 });
 
-// === WORLD TO SCREEN ===
+// === WORLD → SCREEN ===
 function worldToScreen(x, y) {
   return {
     x: x - camera.x + canvas.width / 2,
@@ -52,83 +56,76 @@ function worldToScreen(x, y) {
 // === GRID ===
 function drawGrid() {
   const size = 80;
-  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
 
-  for (let x = -2000; x < 2000; x += size) {
-    const p1 = worldToScreen(x, -2000);
-    const p2 = worldToScreen(x, 2000);
+  for (let x = -3000; x <= 3000; x += size) {
+    const a = worldToScreen(x, -3000);
+    const b = worldToScreen(x, 3000);
     ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
     ctx.stroke();
   }
 
-  for (let y = -2000; y < 2000; y += size) {
-    const p1 = worldToScreen(-2000, y);
-    const p2 = worldToScreen(2000, y);
+  for (let y = -3000; y <= 3000; y += size) {
+    const a = worldToScreen(-3000, y);
+    const b = worldToScreen(3000, y);
     ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
     ctx.stroke();
   }
 }
 
-// === 3D TOWN HALL ===
-const townHall = {
-  x: 0,
-  y: 0,
-  size: 60
-};
+// === TOWN HALL ===
+const townHall = { x: 0, y: 0, size: 70 };
 
 function drawTownHall() {
-  const pos = worldToScreen(townHall.x, townHall.y);
+  const p = worldToScreen(townHall.x, townHall.y);
   const s = townHall.size;
 
   // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.beginPath();
-  ctx.ellipse(pos.x, pos.y + s / 2, s * 0.7, s * 0.3, 0, 0, Math.PI * 2);
+  ctx.ellipse(p.x, p.y + s * 0.6, s * 0.7, s * 0.25, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Front
-  ctx.fillStyle = "#0a7db8";
-  ctx.fillRect(pos.x - s / 2, pos.y - s / 2, s, s);
+  ctx.fillStyle = "#0b82c4";
+  ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
 
   // Side
-  ctx.fillStyle = "#085f8f";
+  ctx.fillStyle = "#086192";
   ctx.beginPath();
-  ctx.moveTo(pos.x + s / 2, pos.y - s / 2);
-  ctx.lineTo(pos.x + s, pos.y - s / 4);
-  ctx.lineTo(pos.x + s, pos.y + s / 2);
-  ctx.lineTo(pos.x + s / 2, pos.y + s / 2);
+  ctx.moveTo(p.x + s / 2, p.y - s / 2);
+  ctx.lineTo(p.x + s, p.y - s / 4);
+  ctx.lineTo(p.x + s, p.y + s / 2);
+  ctx.lineTo(p.x + s / 2, p.y + s / 2);
   ctx.closePath();
   ctx.fill();
 
   // Top
-  ctx.fillStyle = "#3bbcff";
+  ctx.fillStyle = "#3fc2ff";
   ctx.beginPath();
-  ctx.moveTo(pos.x - s / 2, pos.y - s / 2);
-  ctx.lineTo(pos.x, pos.y - s);
-  ctx.lineTo(pos.x + s / 2, pos.y - s / 2);
-  ctx.lineTo(pos.x, pos.y - s / 4);
+  ctx.moveTo(p.x - s / 2, p.y - s / 2);
+  ctx.lineTo(p.x, p.y - s);
+  ctx.lineTo(p.x + s / 2, p.y - s / 2);
+  ctx.lineTo(p.x, p.y - s / 4);
   ctx.closePath();
   ctx.fill();
 
-  // Text
-  ctx.fillStyle = "#ffffff";
+  // Label
+  ctx.fillStyle = "#fff";
   ctx.font = "14px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("TOWN HALL", pos.x, pos.y - s);
+  ctx.fillText("TOWN HALL", p.x, p.y - s - 8);
 }
 
-// === MAIN LOOP ===
+// === LOOP ===
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   drawGrid();
   drawTownHall();
-
   requestAnimationFrame(loop);
 }
-
 loop();
