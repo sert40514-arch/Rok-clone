@@ -1,0 +1,45 @@
+:root {
+  --bg: #0f172a;
+  --panel: #020617;
+  --accent: #38bdf8;
+  --text: #e5e7eb;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 16px;
+  border-bottom: 1px solid #1e293b;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: calc(100vh - 60px);
+}
+
+#commanders {
+  background: var(--panel);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.commander {
+  border: 1px solid #1e293b;
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.commander:hover {
+  border-color: var(--accent);
+}
+
+canvas {
+  background: #020617;
+}
