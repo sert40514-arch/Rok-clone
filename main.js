@@ -1,10 +1,8 @@
-// FULL 3D Rise of Kingdoms DEV PROTOTYPE
+// FULL 3D RISE OF KINGDOMS DEV PROTOTYPE
 
-// Scene
+// Scene & Camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1d2a);
-
-// Camera
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000);
 camera.position.set(300, 400, 400);
 
@@ -14,14 +12,13 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-// Orbit Controls
+// Controls
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.target.set(0,0,0);
 controls.update();
 
 // Lights
-const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambient);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const directional = new THREE.DirectionalLight(0xffffff, 1);
 directional.position.set(300,500,300);
 directional.castShadow = true;
@@ -65,7 +62,7 @@ buildingsData.forEach(b=>{
 // Commanders
 const commanderNames=["Murat","Cansu","Gökdeniz","Can","Aylin","Şerife"];
 const commanders = [];
-commanderNames.forEach((name,i)=>{
+commanderNames.forEach(name=>{
   const geo = new THREE.CylinderGeometry(10,10,30,16);
   const mat = new THREE.MeshStandardMaterial({color:0xffffff});
   const mesh = new THREE.Mesh(geo, mat);
@@ -104,7 +101,7 @@ window.addEventListener("click", onClick);
 // Animate
 function animate(){
   requestAnimationFrame(animate);
-  // Move commanders randomly
+  // Move commanders
   commanders.forEach(c=>{
     if(!c.userData.target){
       const b = buildings[Math.floor(Math.random()*buildings.length)];
@@ -121,3 +118,10 @@ animate();
 
 // Responsive
 window.addEventListener("resize",()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+// TEST KÜP (kontrol)
+const testGeo = new THREE.BoxGeometry(50,50,50);
+const testMat = new THREE.MeshStandardMaterial({color:0xff0000});
+const testCube = new THREE.Mesh(testGeo,testMat);
+testCube.position.set(0,25,0);
+scene.add(testCube);
