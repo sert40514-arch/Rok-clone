@@ -1,159 +1,94 @@
 // ======================
-// CANVAS & CONTEXT
+// CANVAS SETUP (ZORUNLU)
 // ======================
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
 
-// ======================
-// GAME STATE
-// ======================
-const gameState = {
-  commanders: [],
-  selectedCommander: null
-};
+// Canvas boyutunu ZORLA
+canvas.width = window.innerWidth - 260;
+canvas.height = window.innerHeight - 80;
 
 // ======================
-// COMMANDERS (İSİMLER KESİN)
+// DEBUG BACKGROUND
 // ======================
-const commanderNames = [
-  "Murat",
-  "Cansu",
-  "Gökdeniz",
-  "Can",
-  "Aylin",
-  "Şerife"
-];
+function drawBackground() {
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-function createCommander(name) {
-  return {
-    name,
-    level: 1
-  };
-}
-
-gameState.commanders = commanderNames.map(createCommander);
-
-// ======================
-// UI: COMMANDER PANEL
-// ======================
-const commanderPanel = document.getElementById("commanders");
-
-function renderCommanders() {
-  commanderPanel.innerHTML = "";
-  gameState.commanders.forEach(cmd => {
-    const div = document.createElement("div");
-    div.className = "commander";
-    div.textContent = `${cmd.name} • Lv.${cmd.level}`;
-    commanderPanel.appendChild(div);
-  });
+  // Grid (görsel referans)
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  for (let x = 0; x < canvas.width; x += 50) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 50) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
 }
 
 // ======================
-// CITY & BUILDINGS
+// FAKE 3D BUILDING (DEVASA)
 // ======================
-const TILE_WIDTH = 64;
-const TILE_HEIGHT = 32;
-
-const city = {
-  buildings: [
-    { type: "TownHall", x: 4, y: 4, level: 2 },
-    { type: "Farm", x: 2, y: 5, level: 1 },
-    { type: "Barracks", x: 6, y: 5, level: 1 },
-    { type: "Mine", x: 5, y: 2, level: 1 }
-  ]
-};
-
-// ======================
-// ISOMETRIC CONVERTER
-// ======================
-function isoToScreen(x, y) {
-  return {
-    x: (x - y) * TILE_WIDTH / 2 + canvas.width / 2,
-    y: (x + y) * TILE_HEIGHT / 2 + 100
-  };
-}
-
-// ======================
-// DRAW BUILDING (FAKE 3D)
-// ======================
-function drawBuilding(b) {
-  const pos = isoToScreen(b.x, b.y);
-  const h = 28 + b.level * 14;
+function drawTestBuilding() {
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const height = 140;
 
   // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.beginPath();
-  ctx.ellipse(pos.x, pos.y + 18, 24, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(centerX, centerY + 80, 90, 30, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Top
-  ctx.fillStyle = "#334155";
+  ctx.fillStyle = "#38bdf8";
   ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y - h);
-  ctx.lineTo(pos.x + 24, pos.y - h + 12);
-  ctx.lineTo(pos.x, pos.y - h + 24);
-  ctx.lineTo(pos.x - 24, pos.y - h + 12);
+  ctx.moveTo(centerX, centerY - height);
+  ctx.lineTo(centerX + 90, centerY - height + 45);
+  ctx.lineTo(centerX, centerY - height + 90);
+  ctx.lineTo(centerX - 90, centerY - height + 45);
   ctx.closePath();
   ctx.fill();
 
   // Left
-  ctx.fillStyle = "#1e293b";
+  ctx.fillStyle = "#0284c7";
   ctx.beginPath();
-  ctx.moveTo(pos.x - 24, pos.y - h + 12);
-  ctx.lineTo(pos.x, pos.y - h + 24);
-  ctx.lineTo(pos.x, pos.y + 24);
-  ctx.lineTo(pos.x - 24, pos.y + 12);
+  ctx.moveTo(centerX - 90, centerY - height + 45);
+  ctx.lineTo(centerX, centerY - height + 90);
+  ctx.lineTo(centerX, centerY + 90);
+  ctx.lineTo(centerX - 90, centerY + 45);
   ctx.closePath();
   ctx.fill();
 
   // Right
-  ctx.fillStyle = "#0f172a";
+  ctx.fillStyle = "#0369a1";
   ctx.beginPath();
-  ctx.moveTo(pos.x + 24, pos.y - h + 12);
-  ctx.lineTo(pos.x, pos.y - h + 24);
-  ctx.lineTo(pos.x, pos.y + 24);
-  ctx.lineTo(pos.x + 24, pos.y + 12);
+  ctx.moveTo(centerX + 90, centerY - height + 45);
+  ctx.lineTo(centerX, centerY - height + 90);
+  ctx.lineTo(centerX, centerY + 90);
+  ctx.lineTo(centerX + 90, centerY + 45);
   ctx.closePath();
   ctx.fill();
 
   // Label
-  ctx.fillStyle = "#e5e7eb";
-  ctx.font = "11px system-ui";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "20px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText(
-    `${b.type} Lv.${b.level}`,
-    pos.x,
-    pos.y - h - 6
-  );
+  ctx.fillText("TOWN HALL", centerX, centerY - height - 20);
 }
 
 // ======================
-// RENDER CITY
-// ======================
-function renderCity() {
-  city.buildings
-    .sort((a, b) => (a.x + a.y) - (b.x + b.y))
-    .forEach(drawBuilding);
-}
-
-// ======================
-// MAIN RENDER
-// ======================
-function renderMap() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderCity();
-}
-
-// ======================
-// GAME LOOP
+// RENDER LOOP
 // ======================
 function loop() {
-  renderMap();
+  drawBackground();
+  drawTestBuilding();
   requestAnimationFrame(loop);
 }
 
-// ======================
-// START
-// ======================
-renderCommanders();
 loop();
