@@ -1,23 +1,20 @@
-// --- GAME STATE ---
+// ======================
+// CANVAS & CONTEXT
+// ======================
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+
+// ======================
+// GAME STATE
+// ======================
 const gameState = {
   commanders: [],
   selectedCommander: null
 };
 
-// --- COMMANDER FACTORY ---
-function createCommander(name) {
-  return {
-    name,
-    level: 1,
-    power: 100,
-    position: {
-      x: Math.random() * 780 + 10,
-      y: Math.random() * 480 + 10
-    }
-  };
-}
-
-// --- INIT COMMANDERS (KESİNLİKLE OYUNDA GEÇECEK İSİMLER) ---
+// ======================
+// COMMANDERS (İSİMLER KESİN)
+// ======================
 const commanderNames = [
   "Murat",
   "Cansu",
@@ -27,9 +24,18 @@ const commanderNames = [
   "Şerife"
 ];
 
+function createCommander(name) {
+  return {
+    name,
+    level: 1
+  };
+}
+
 gameState.commanders = commanderNames.map(createCommander);
 
-// --- UI RENDER ---
+// ======================
+// UI: COMMANDER PANEL
+// ======================
 const commanderPanel = document.getElementById("commanders");
 
 function renderCommanders() {
@@ -38,87 +44,75 @@ function renderCommanders() {
     const div = document.createElement("div");
     div.className = "commander";
     div.textContent = `${cmd.name} • Lv.${cmd.level}`;
-    div.onclick = () => gameState.selectedCommander = cmd;
     commanderPanel.appendChild(div);
   });
 }
 
-// --- MAP RENDER ---
-function renderMap() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderCity();
-}
-  });
-}
-
-// --- GAME LOOP ---
-function loop() {
-  renderMap();
-  requestAnimationFrame(loop);
-}
-
-// --- START ---
-renderCommanders();
-loop();
-// --- CITY CONFIG ---
+// ======================
+// CITY & BUILDINGS
+// ======================
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = 32;
 
 const city = {
   buildings: [
-    { type: "TownHall", x: 4, y: 4, level: 1 },
+    { type: "TownHall", x: 4, y: 4, level: 2 },
     { type: "Farm", x: 2, y: 5, level: 1 },
     { type: "Barracks", x: 6, y: 5, level: 1 },
     { type: "Mine", x: 5, y: 2, level: 1 }
   ]
 };
 
-// --- ISOMETRIC CONVERTER ---
+// ======================
+// ISOMETRIC CONVERTER
+// ======================
 function isoToScreen(x, y) {
   return {
     x: (x - y) * TILE_WIDTH / 2 + canvas.width / 2,
-    y: (x + y) * TILE_HEIGHT / 2 + 120
+    y: (x + y) * TILE_HEIGHT / 2 + 100
   };
 }
 
-// --- BUILDING RENDER ---
-function drawBuilding(building) {
-  const pos = isoToScreen(building.x, building.y);
-  const height = 30 + building.level * 12;
+// ======================
+// DRAW BUILDING (FAKE 3D)
+// ======================
+function drawBuilding(b) {
+  const pos = isoToScreen(b.x, b.y);
+  const h = 28 + b.level * 14;
 
   // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
-  ctx.ellipse(pos.x, pos.y + TILE_HEIGHT / 2, 22, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(pos.x, pos.y + 18, 24, 8, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Base
-  ctx.fillStyle = "#1e293b";
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y - height);
-  ctx.lineTo(pos.x + 22, pos.y - height + 12);
-  ctx.lineTo(pos.x, pos.y - height + 24);
-  ctx.lineTo(pos.x - 22, pos.y - height + 12);
-  ctx.closePath();
-  ctx.fill();
-
-  // Front face
+  // Top
   ctx.fillStyle = "#334155";
   ctx.beginPath();
-  ctx.moveTo(pos.x - 22, pos.y - height + 12);
-  ctx.lineTo(pos.x, pos.y - height + 24);
-  ctx.lineTo(pos.x, pos.y + 24);
-  ctx.lineTo(pos.x - 22, pos.y + 12);
+  ctx.moveTo(pos.x, pos.y - h);
+  ctx.lineTo(pos.x + 24, pos.y - h + 12);
+  ctx.lineTo(pos.x, pos.y - h + 24);
+  ctx.lineTo(pos.x - 24, pos.y - h + 12);
   ctx.closePath();
   ctx.fill();
 
-  // Side face
+  // Left
+  ctx.fillStyle = "#1e293b";
+  ctx.beginPath();
+  ctx.moveTo(pos.x - 24, pos.y - h + 12);
+  ctx.lineTo(pos.x, pos.y - h + 24);
+  ctx.lineTo(pos.x, pos.y + 24);
+  ctx.lineTo(pos.x - 24, pos.y + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Right
   ctx.fillStyle = "#0f172a";
   ctx.beginPath();
-  ctx.moveTo(pos.x + 22, pos.y - height + 12);
-  ctx.lineTo(pos.x, pos.y - height + 24);
+  ctx.moveTo(pos.x + 24, pos.y - h + 12);
+  ctx.lineTo(pos.x, pos.y - h + 24);
   ctx.lineTo(pos.x, pos.y + 24);
-  ctx.lineTo(pos.x + 22, pos.y + 12);
+  ctx.lineTo(pos.x + 24, pos.y + 12);
   ctx.closePath();
   ctx.fill();
 
@@ -127,15 +121,39 @@ function drawBuilding(building) {
   ctx.font = "11px system-ui";
   ctx.textAlign = "center";
   ctx.fillText(
-    `${building.type} Lv.${building.level}`,
+    `${b.type} Lv.${b.level}`,
     pos.x,
-    pos.y - height - 6
+    pos.y - h - 6
   );
 }
 
-// --- CITY RENDER ---
+// ======================
+// RENDER CITY
+// ======================
 function renderCity() {
   city.buildings
     .sort((a, b) => (a.x + a.y) - (b.x + b.y))
     .forEach(drawBuilding);
 }
+
+// ======================
+// MAIN RENDER
+// ======================
+function renderMap() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  renderCity();
+}
+
+// ======================
+// GAME LOOP
+// ======================
+function loop() {
+  renderMap();
+  requestAnimationFrame(loop);
+}
+
+// ======================
+// START
+// ======================
+renderCommanders();
+loop();
