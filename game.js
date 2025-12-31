@@ -75,6 +75,14 @@ function drawBuilding(b) {
   const x = b.x - camera.x;
   const y = b.y - camera.y;
 
+  // glow effect if selected
+  if (b === selectedBuilding) {
+    ctx.shadowColor = "rgba(255,255,0,0.7)";
+    ctx.shadowBlur = 20;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+
   // body
   ctx.fillStyle = b.color;
   ctx.fillRect(x, y, size, size);
@@ -98,25 +106,22 @@ function drawBuilding(b) {
   ctx.fill();
 
   // label
+  ctx.shadowBlur = 0; // reset shadow for text
   ctx.fillStyle = "#fff";
   ctx.font = "13px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(b.name, x + size / 2, y - 10);
+  ctx.fillText(`${b.name} Lv.${b.level}`, x + size / 2, y - 10);
 }
 
 // ================= CITY DATA =================
 const buildings = [];
+let selectedBuilding = null;
 
 // Town Hall
-const townHall = {
-  name: "TOWN HALL",
-  x: 0,
-  y: 0,
-  color: "#1ea7ff"
-};
+const townHall = { name: "TOWN HALL", x: 0, y: 0, color: "#1ea7ff", level: 1 };
 buildings.push(townHall);
 
-// Automatic city layout (RoK style ring)
+// Automatic city layout
 const cityRing = [
   { name: "BARRACKS", dx: -TILE, dy: 0, color: "#c0392b" },
   { name: "ARCHERY", dx: TILE, dy: 0, color: "#e67e22" },
@@ -126,14 +131,30 @@ const cityRing = [
   { name: "GOLD", dx: TILE, dy: TILE, color: "#f1c40f" }
 ];
 
-// Place around Town Hall
 cityRing.forEach(b => {
-  buildings.push({
-    name: b.name,
-    x: townHall.x + b.dx,
-    y: townHall.y + b.dy,
-    color: b.color
+  buildings.push({ name: b.name, x: townHall.x + b.dx, y: townHall.y + b.dy, color: b.color, level: 1 });
+});
+
+// ================= SELECT BUILDING =================
+function getBuildingAt(x, y) {
+  return buildings.find(b => {
+    return x >= b.x - camera.x &&
+           x <= b.x - camera.x + 70 &&
+           y >= b.y - camera.y &&
+           y <= b.y - camera.y + 70;
   });
+}
+
+canvas.addEventListener("mousedown", e => {
+  const b = getBuildingAt(e.clientX, e.clientY);
+  if (b) selectedBuilding = b;
+});
+
+// mobile tap
+canvas.addEventListener("touchstart", e => {
+  const t = e.touches[0];
+  const b = getBuildingAt(t.clientX, t.clientY);
+  if (b) selectedBuilding = b;
 });
 
 // ================= MAIN LOOP =================
