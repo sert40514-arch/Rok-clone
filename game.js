@@ -1,3 +1,4 @@
+alert("GAME.JS AKTİF ÇALIŞIYOR!");
 // ================= SETUP =================
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
