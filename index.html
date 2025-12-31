@@ -3,52 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>Rise of Kingdoms – Prototype</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #0b1d2a;
-      font-family: Arial, sans-serif;
-    }
-
-    canvas {
-      display: block;
-      background: linear-gradient(#0e2a3a, #0b1d2a);
-    }
-
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 48px;
-      background: rgba(0,0,0,0.4);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding-left: 16px;
-      z-index: 10;
-      backdrop-filter: blur(6px);
-    }
+    html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b1d2a; font-family:Arial,sans-serif; }
+    canvas { display:block; background: linear-gradient(#0e2a3a, #0b1d2a); }
+    header { position:fixed; top:0; left:0; width:100%; height:48px; background:rgba(0,0,0,0.4); color:#fff; display:flex; align-items:center; padding-left:16px; z-index:10; backdrop-filter: blur(6px); }
   </style>
 </head>
-
 <body>
-
-  <header>
-    Rise of Kingdoms – City Prototype
-  </header>
-
+  <header>Rise of Kingdoms – City Prototype</header>
   <canvas id="map"></canvas>
-
-  <!-- ⚠️ TEK VE DOĞRU JS BAĞLANTISI -->
-  <script src="./game.js?v=3"></script>
-
+  <!-- DOĞRU JS -->
+  <script src="./game.js?v=999"></script>
 </body>
 </html>
