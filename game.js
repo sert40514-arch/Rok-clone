@@ -44,17 +44,10 @@ function renderCommanders() {
 }
 
 // --- MAP RENDER ---
-const canvas = document.getElementById("map");
-const ctx = canvas.getContext("2d");
-
 function renderMap() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  gameState.commanders.forEach(cmd => {
-    ctx.beginPath();
-    ctx.arc(cmd.position.x, cmd.position.y, 8, 0, Math.PI * 2);
-    ctx.fillStyle =
-      gameState.selectedCommander === cmd ? "#38bdf8" : "#94a3b8";
-    ctx.fill();
+  renderCity();
+}
   });
 }
 
@@ -67,3 +60,82 @@ function loop() {
 // --- START ---
 renderCommanders();
 loop();
+// --- CITY CONFIG ---
+const TILE_WIDTH = 64;
+const TILE_HEIGHT = 32;
+
+const city = {
+  buildings: [
+    { type: "TownHall", x: 4, y: 4, level: 1 },
+    { type: "Farm", x: 2, y: 5, level: 1 },
+    { type: "Barracks", x: 6, y: 5, level: 1 },
+    { type: "Mine", x: 5, y: 2, level: 1 }
+  ]
+};
+
+// --- ISOMETRIC CONVERTER ---
+function isoToScreen(x, y) {
+  return {
+    x: (x - y) * TILE_WIDTH / 2 + canvas.width / 2,
+    y: (x + y) * TILE_HEIGHT / 2 + 120
+  };
+}
+
+// --- BUILDING RENDER ---
+function drawBuilding(building) {
+  const pos = isoToScreen(building.x, building.y);
+  const height = 30 + building.level * 12;
+
+  // Shadow
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(pos.x, pos.y + TILE_HEIGHT / 2, 22, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Base
+  ctx.fillStyle = "#1e293b";
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y - height);
+  ctx.lineTo(pos.x + 22, pos.y - height + 12);
+  ctx.lineTo(pos.x, pos.y - height + 24);
+  ctx.lineTo(pos.x - 22, pos.y - height + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Front face
+  ctx.fillStyle = "#334155";
+  ctx.beginPath();
+  ctx.moveTo(pos.x - 22, pos.y - height + 12);
+  ctx.lineTo(pos.x, pos.y - height + 24);
+  ctx.lineTo(pos.x, pos.y + 24);
+  ctx.lineTo(pos.x - 22, pos.y + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Side face
+  ctx.fillStyle = "#0f172a";
+  ctx.beginPath();
+  ctx.moveTo(pos.x + 22, pos.y - height + 12);
+  ctx.lineTo(pos.x, pos.y - height + 24);
+  ctx.lineTo(pos.x, pos.y + 24);
+  ctx.lineTo(pos.x + 22, pos.y + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Label
+  ctx.fillStyle = "#e5e7eb";
+  ctx.font = "11px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    `${building.type} Lv.${building.level}`,
+    pos.x,
+    pos.y - height - 6
+  );
+}
+
+// --- CITY RENDER ---
+function renderCity() {
+  city.buildings
+    .sort((a, b) => (a.x + a.y) - (b.x + b.y))
+    .forEach(drawBuilding);
+}
