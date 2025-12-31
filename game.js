@@ -1,93 +1,133 @@
-// ======================
-// CANVAS SETUP (ZORUNLU)
-// ======================
+// === CANVAS SETUP ===
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
 
-// Canvas boyutunu ZORLA
-canvas.width = window.innerWidth - 260;
+canvas.width = window.innerWidth;
 canvas.height = window.innerHeight - 80;
 
-// ======================
-// DEBUG BACKGROUND
-// ======================
-function drawBackground() {
-  ctx.fillStyle = "#020617";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+// === CAMERA ===
+const camera = {
+  x: 0,
+  y: 0
+};
 
-  // Grid (görsel referans)
+// === TOUCH PAN SYSTEM ===
+let isDragging = false;
+let lastTouch = { x: 0, y: 0 };
+
+canvas.addEventListener("touchstart", (e) => {
+  isDragging = true;
+  lastTouch.x = e.touches[0].clientX;
+  lastTouch.y = e.touches[0].clientY;
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!isDragging) return;
+
+  const x = e.touches[0].clientX;
+  const y = e.touches[0].clientY;
+
+  const dx = x - lastTouch.x;
+  const dy = y - lastTouch.y;
+
+  camera.x -= dx;
+  camera.y -= dy;
+
+  lastTouch.x = x;
+  lastTouch.y = y;
+});
+
+canvas.addEventListener("touchend", () => {
+  isDragging = false;
+});
+
+// === WORLD TO SCREEN ===
+function worldToScreen(x, y) {
+  return {
+    x: x - camera.x + canvas.width / 2,
+    y: y - camera.y + canvas.height / 2
+  };
+}
+
+// === GRID ===
+function drawGrid() {
+  const size = 80;
   ctx.strokeStyle = "rgba(255,255,255,0.05)";
-  for (let x = 0; x < canvas.width; x += 50) {
+
+  for (let x = -2000; x < 2000; x += size) {
+    const p1 = worldToScreen(x, -2000);
+    const p2 = worldToScreen(x, 2000);
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
   }
-  for (let y = 0; y < canvas.height; y += 50) {
+
+  for (let y = -2000; y < 2000; y += size) {
+    const p1 = worldToScreen(-2000, y);
+    const p2 = worldToScreen(2000, y);
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
   }
 }
 
-// ======================
-// FAKE 3D BUILDING (DEVASA)
-// ======================
-function drawTestBuilding() {
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  const height = 140;
+// === 3D TOWN HALL ===
+const townHall = {
+  x: 0,
+  y: 0,
+  size: 60
+};
+
+function drawTownHall() {
+  const pos = worldToScreen(townHall.x, townHall.y);
+  const s = townHall.size;
 
   // Shadow
   ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.beginPath();
-  ctx.ellipse(centerX, centerY + 80, 90, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(pos.x, pos.y + s / 2, s * 0.7, s * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Front
+  ctx.fillStyle = "#0a7db8";
+  ctx.fillRect(pos.x - s / 2, pos.y - s / 2, s, s);
+
+  // Side
+  ctx.fillStyle = "#085f8f";
+  ctx.beginPath();
+  ctx.moveTo(pos.x + s / 2, pos.y - s / 2);
+  ctx.lineTo(pos.x + s, pos.y - s / 4);
+  ctx.lineTo(pos.x + s, pos.y + s / 2);
+  ctx.lineTo(pos.x + s / 2, pos.y + s / 2);
+  ctx.closePath();
   ctx.fill();
 
   // Top
-  ctx.fillStyle = "#38bdf8";
+  ctx.fillStyle = "#3bbcff";
   ctx.beginPath();
-  ctx.moveTo(centerX, centerY - height);
-  ctx.lineTo(centerX + 90, centerY - height + 45);
-  ctx.lineTo(centerX, centerY - height + 90);
-  ctx.lineTo(centerX - 90, centerY - height + 45);
+  ctx.moveTo(pos.x - s / 2, pos.y - s / 2);
+  ctx.lineTo(pos.x, pos.y - s);
+  ctx.lineTo(pos.x + s / 2, pos.y - s / 2);
+  ctx.lineTo(pos.x, pos.y - s / 4);
   ctx.closePath();
   ctx.fill();
 
-  // Left
-  ctx.fillStyle = "#0284c7";
-  ctx.beginPath();
-  ctx.moveTo(centerX - 90, centerY - height + 45);
-  ctx.lineTo(centerX, centerY - height + 90);
-  ctx.lineTo(centerX, centerY + 90);
-  ctx.lineTo(centerX - 90, centerY + 45);
-  ctx.closePath();
-  ctx.fill();
-
-  // Right
-  ctx.fillStyle = "#0369a1";
-  ctx.beginPath();
-  ctx.moveTo(centerX + 90, centerY - height + 45);
-  ctx.lineTo(centerX, centerY - height + 90);
-  ctx.lineTo(centerX, centerY + 90);
-  ctx.lineTo(centerX + 90, centerY + 45);
-  ctx.closePath();
-  ctx.fill();
-
-  // Label
+  // Text
   ctx.fillStyle = "#ffffff";
-  ctx.font = "20px system-ui";
+  ctx.font = "14px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("TOWN HALL", centerX, centerY - height - 20);
+  ctx.fillText("TOWN HALL", pos.x, pos.y - s);
 }
 
-// ======================
-// RENDER LOOP
-// ======================
+// === MAIN LOOP ===
 function loop() {
-  drawBackground();
-  drawTestBuilding();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawGrid();
+  drawTownHall();
+
   requestAnimationFrame(loop);
 }
 
