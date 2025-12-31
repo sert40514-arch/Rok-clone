@@ -11,11 +11,9 @@ canvas.style.touchAction="none";
 let camera={x:0,y:0};
 let isDragging=false,lastX=0,lastY=0;
 
-// ================= PAN =================
 canvas.addEventListener("mousedown", e=>{ isDragging=true; lastX=e.clientX; lastY=e.clientY; });
 window.addEventListener("mouseup", ()=>isDragging=false);
 canvas.addEventListener("mousemove", e=>{ if(!isDragging)return; camera.x-=(e.clientX-lastX); camera.y-=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; });
-
 canvas.addEventListener("touchstart", e=>{ const t=e.touches[0]; isDragging=true; lastX=t.clientX; lastY=t.clientY; });
 canvas.addEventListener("touchmove", e=>{ if(!isDragging)return; const t=e.touches[0]; camera.x-=(t.clientX-lastX); camera.y-=(t.clientY-lastY); lastX=t.clientX; lastY=t.clientY; });
 canvas.addEventListener("touchend", ()=>isDragging=false);
@@ -28,10 +26,66 @@ function drawGrid(){
   for(let y=-3000;y<=3000;y+=TILE){ ctx.beginPath(); ctx.moveTo(-3000-camera.x,y-camera.y); ctx.lineTo(3000-camera.x,y-camera.y); ctx.stroke(); }
 }
 
-// ================= BUILDINGS =================
+// ================= BUILDING CLASS =================
+class Building3D{
+  constructor(name,x,y,color,level=1){
+    this.name=name; this.x=x; this.y=y; this.color=color; this.level=level;
+    this.width=70; this.height=70;
+  }
+  draw(ctx,camera,selected=false){
+    const x=this.x-camera.x;
+    const y=this.y-camera.y;
+    const w=this.width; const h=this.height;
+    // Glow
+    if(selected){ ctx.shadowColor="rgba(255,255,0,0.8)"; ctx.shadowBlur=20; } else { ctx.shadowBlur=0; }
+    // Base
+    ctx.fillStyle=this.color; ctx.fillRect(x,y,w,h);
+    // Shadow walls
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-w*0.6,y-h*0.6); ctx.lineTo(x-w*0.6,y+h-h*0.6); ctx.lineTo(x,y+h); ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.25)";
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w-w*0.6,y-h*0.6); ctx.lineTo(x-w*0.6,y-h*0.6); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle="#fff"; ctx.font="13px Arial"; ctx.textAlign="center";
+    ctx.fillText(`${this.name} Lv.${this.level}`,x+w/2,y-10);
+  }
+}
+
+// ================= COMMANDER CLASS =================
+class Commander3D{
+  constructor(name,x,y,color="#fff"){
+    this.name=name; this.x=x; this.y=y; this.color=color;
+    this.target=null; this.speed=1+Math.random();
+  }
+  draw(ctx,camera){
+    const size=20; const x=this.x-camera.x; const y=this.y-camera.y;
+    ctx.fillStyle=this.color;
+    ctx.beginPath();
+    ctx.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);
+    ctx.fill();
+    // Placeholder weapon: sword/arrow/shield
+    ctx.strokeStyle="#fff"; ctx.beginPath(); ctx.moveTo(x+size/2,y+size/2); ctx.lineTo(x+size/2+5,y+size/2-10); ctx.stroke();
+    ctx.fillStyle="#fff"; ctx.font="12px Arial"; ctx.textAlign="center";
+    ctx.fillText(this.name,x+size/2,y-5);
+  }
+  move(buildings){
+    if(!this.target){
+      const b=buildings[Math.floor(Math.random()*buildings.length)];
+      this.target={x:b.x+35,y:b.y+35};
+    }
+    const dx=this.target.x-this.x;
+    const dy=this.target.y-this.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<1){ this.target=null; return; }
+    this.x+=dx/dist*this.speed;
+    this.y+=dy/dist*this.speed;
+  }
+}
+
+// ================= INIT BUILDINGS =================
 const buildings=[];
 let selectedBuilding=null;
-const townHall={name:"TOWN HALL",x:0,y:0,color:"#1ea7ff",level:1};
+const townHall=new Building3D("TOWN HALL",0,0,"#1ea7ff");
 buildings.push(townHall);
 
 const cityRing=[
@@ -42,31 +96,11 @@ const cityRing=[
   {name:"QUARRY",dx:-TILE,dy:-TILE,color:"#7f8c8d"},
   {name:"GOLD",dx:TILE,dy:TILE,color:"#f1c40f"}
 ];
-cityRing.forEach(b=>buildings.push({name:b.name,x:townHall.x+b.dx,y:townHall.y+b.dy,color:b.color,level:1}));
+cityRing.forEach(b=>buildings.push(new Building3D(b.name,townHall.x+b.dx,townHall.y+b.dy,b.color)));
 
-// ================= DRAW BUILDING =================
-function drawBuilding(b){
-  const size=70,h=size*0.6,x=b.x-camera.x,y=b.y-camera.y;
-
-  if(b===selectedBuilding){ ctx.shadowColor="rgba(255,255,0,0.7)"; ctx.shadowBlur=20; } else { ctx.shadowBlur=0; }
-
-  ctx.fillStyle=b.color; ctx.fillRect(x,y,size,size);
-
-  ctx.fillStyle="rgba(0,0,0,0.25)";
-  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-h,y-h); ctx.lineTo(x-h,y+size-h); ctx.lineTo(x,y+size); ctx.fill();
-
-  ctx.fillStyle="rgba(255,255,255,0.25)";
-  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+size,y); ctx.lineTo(x+size-h,y-h); ctx.lineTo(x-h,y-h); ctx.fill();
-
-  ctx.shadowBlur=0;
-  ctx.fillStyle="#fff"; ctx.font="13px Arial"; ctx.textAlign="center";
-  ctx.fillText(`${b.name} Lv.${b.level}`, x+size/2, y-10);
-}
-
-// ================= BUILDING SELECTION =================
-function getBuildingAt(x,y){
-  return buildings.find(b=>x>=b.x-camera.x && x<=b.x-camera.x+70 && y>=b.y-camera.y && y<=b.y-camera.y+70);
-}
+// ================= INIT COMMANDERS =================
+const commanderNames=["Murat","Cansu","Gökdeniz","Can","Aylin","Şerife"];
+const commanders=commanderNames.map((name,i)=>new Commander3D(name,townHall.x+Math.random()*200-100,townHall.y+Math.random()*200-100));
 
 // ================= INFO PANEL =================
 const panel=document.createElement("div");
@@ -90,65 +124,22 @@ function updatePanel(){
 
 // ================= CLICK =================
 canvas.addEventListener("mousedown", e=>{
-  const b=getBuildingAt(e.clientX,e.clientY);
-  selectedBuilding=b||null;
+  selectedBuilding=buildings.find(b=>e.clientX>=b.x-camera.x && e.clientX<=b.x-camera.x+b.width && e.clientY>=b.y-camera.y && e.clientY<=b.y-camera.y+b.height)||null;
   updatePanel();
 });
 
 canvas.addEventListener("touchstart", e=>{
   const t=e.touches[0];
-  const b=getBuildingAt(t.clientX,t.clientY);
-  selectedBuilding=b||null;
+  selectedBuilding=buildings.find(b=>t.clientX>=b.x-camera.x && t.clientX<=b.x-camera.x+b.width && t.clientY>=b.y-camera.y && t.clientY<=b.y-camera.y+b.height)||null;
   updatePanel();
 });
-
-// ================= COMMANDERS =================
-const commanders=["Murat","Cansu","Gökdeniz","Can","Aylin","Şerife"];
-const units=commanders.map((name,i)=>({
-  name, 
-  x: townHall.x + Math.random()*200-100, 
-  y: townHall.y + Math.random()*200-100, 
-  color: "#fff", 
-  target:null,
-  speed:1 + Math.random()*1
-}));
-
-function drawCommander(u){
-  const size=20;
-  const x=u.x-camera.x;
-  const y=u.y-camera.y;
-  ctx.fillStyle=u.color;
-  ctx.beginPath();
-  ctx.arc(x+size/2, y+size/2, size/2, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle="#fff";
-  ctx.font="12px Arial"; ctx.textAlign="center";
-  ctx.fillText(u.name,x+size/2,y-5);
-}
-
-function moveCommanders(){
-  units.forEach(u=>{
-    if(!u.target){
-      // random target on one of buildings
-      const b = buildings[Math.floor(Math.random()*buildings.length)];
-      u.target={x:b.x+35,y:b.y+35};
-    }
-    const dx=u.target.x-u.x;
-    const dy=u.target.y-u.y;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<1){ u.target=null; return; }
-    u.x += dx/dist * u.speed;
-    u.y += dy/dist * u.speed;
-  });
-}
 
 // ================= MAIN LOOP =================
 function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   drawGrid();
-  buildings.forEach(drawBuilding);
-  moveCommanders();
-  units.forEach(drawCommander);
+  buildings.forEach(b=>b.draw(ctx,camera,b===selectedBuilding));
+  commanders.forEach(c=>{ c.move(buildings); c.draw(ctx,camera); });
   requestAnimationFrame(render);
 }
 render();
